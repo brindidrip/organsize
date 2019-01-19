@@ -53,7 +53,7 @@ SOURCES       = analysis.cpp \
 		main.cpp \
 		segment.cpp \
 		organsize.cpp \
-		guiwindow.cpp moc_gui.cpp \
+		guiwindow.cpp  \
 		moc_guiwindow.cpp
 OBJECTS       = analysis.o \
 		dirFile.o \
@@ -382,9 +382,6 @@ organsize.o: organsize.cpp organsize.h \
 guiwindow.o: guiwindow.cpp guiwindow.h \
 		ui_guiwindow.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o guiwindow.o guiwindow.cpp
-
-moc_gui.o: moc_gui.cpp 
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_gui.o moc_gui.cpp
 
 moc_guiwindow.o: moc_guiwindow.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_guiwindow.o moc_guiwindow.cpp

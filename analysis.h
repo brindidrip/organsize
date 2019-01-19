@@ -15,12 +15,17 @@ class Analysis
         enum fileUnits { byte, KB, MB, GB, TB};
         platform machinePlatform;
         bool validSelection;
-        long long fileSize;
+        long long mFileSize;
+        long long mSegments;
+        long long mSegSize;
+        long long mTotalSegments;
+        long long mRemainderSegSize;
         std::string errorString;
 
         // member functions:
         void identifyPlatform();
-        void fileAnalysis( const char* filePath, int segmentSize, int unitSize);
+        void fileAnalysis( const char* filePath );
+        void segmentAnalysis (int segmentSize, int unitSize );
     
     private:
 

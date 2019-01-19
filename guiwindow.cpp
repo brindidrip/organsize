@@ -33,9 +33,11 @@ GuiWindow::GuiWindow(QWidget *parent) :
     ui->m_button_reconstruct->setEnabled(false);
 
     connect(ui->m_button_file, SIGNAL (clicked(bool)), this, SLOT (fileSelector(bool)));
-    connect(ui->m_button_dir, SIGNAL (clicked(bool)), this, SLOT (dirSelectorClicked(bool)));
-    connect(ui->m_button_segment, SIGNAL (clicked(bool)), this, SLOT (analyzeDir(bool)));\
+    connect(ui->m_button_dir, SIGNAL (clicked(bool)), this, SLOT (dirSelector(bool)));
+    connect(ui->m_button_segment, SIGNAL (clicked(bool)), this, SLOT (segmentSelector(bool)));
     connect(ui->m_button_organsize, SIGNAL (clicked(bool)), this, SLOT (organsizeFile(bool)));
+    connect(ui->m_button_reconstruct, SIGNAL (clicked(bool)), this, SLOT (reconstructFile(bool)));
+
 
     ui->verticalSlider->setRange(1, 1024);
     ui->verticalSlider->setSingleStep(100);
@@ -55,6 +57,7 @@ GuiWindow::~GuiWindow()
 void GuiWindow::textEditBoxInit()
 {
     ui->textEdit->setFont(QFont("Monospace", 10));
+    ui->textEdit->append("  ------------------------------------------------------------------------------");
     ui->textEdit->append("  -.d88888b.----------------------------------------------d8b-------------------");
     ui->textEdit->append("  d88P---Y88b---------------------------------------------Y8P-------------------");
     ui->textEdit->append("  888-----888-------------------------------------------------------------------");
@@ -69,7 +72,8 @@ void GuiWindow::textEditBoxInit()
     ui->textEdit->append("  ------------------------------------------------------------------------------");
     ui->textEdit->append("  ------------------------------------------------------------------------------");
     ui->textEdit->append("  ------------------------------------------------------------------------------");
-    ui->textEdit->append("  ------------------------------------------------------------------------------");
+    ui->textEdit->append("  ==============================================================================");
+
     ui->textEdit->append("\n\nMIT License\n");
     ui->textEdit->append("Copyright (c) 2019 Domenico Martinelli\n\n\Permission is hereby granted, free of charge, to any person obtaining a copy"
                          "of this software and associated documentation files (the \"Software\"), to deal "
@@ -88,7 +92,7 @@ void GuiWindow::textEditBoxInit()
     ui->textEdit->setReadOnly(true);
 }
 
-void GuiWindow::dirSelectorClicked(bool checked)
+void GuiWindow::dirSelector(bool checked)
 {
     if (checked) {
         QString path = QFileDialog::getExistingDirectory(this, tr("Choose catalog"), ".", QFileDialog::ReadOnly);
@@ -111,6 +115,26 @@ void GuiWindow::fileSelector(bool checked)
 
         ui->m_button_organsize->setEnabled(true);
         ui->m_button_dir->setEnabled(true);
+        ui->m_button_reconstruct->setEnabled(false);
+    }
+}
+
+void GuiWindow::segmentSelector(bool checked)
+{
+    if (checked) {
+        ui->textEdit->setText("Selecting initial segment to reconstruct...\n");
+
+        QString file = QFileDialog::getOpenFileName(this, tr("Choose initial segment to reconstruct original file."), tr("."));
+        this->selected_file = file.toStdString();
+
+        ui->textEdit->append("File: '" + file + "'");
+        ui->textEdit->append("Current output path: " + QString::fromStdString(this->selected_opath));
+        ui->textEdit->append("Please ensure that all segments are within the specified directory.");
+
+        ui->m_button_organsize->setEnabled(false);
+        ui->m_button_dir->setEnabled(true);
+        ui->m_button_file->setEnabled(false);
+        ui->m_button_reconstruct->setEnabled(true);
     }
 }
 
@@ -124,31 +148,46 @@ void GuiWindow::organsizeFile(bool checked)
         {   
             ui->textEdit->setText("*********** ERROR ***********");
             ui->textEdit->append(QString::fromStdString(analysis.errorString));
-
         }
         else
         {
             ui->textEdit->append("File selected: " + QString::fromStdString(this->selected_file)
             + "\nSelected segment size: " + QString::number(this->selected_size) + " " + this->selected_unitStr
-            + "s.\nSelected file size: " + QString::number(analysis.fileSize) + " bytes.");
-            
-            //Organsize organize(this->selected_file, this->selected_opath, 0);
+            + "s.\nSelected file size: " + QString::number(analysis.mFileSize) + " bytes.");
+
+            //std::cout << analysis.machinePlatform << std::endl;
+            Organsize organize(this->selected_file, this->selected_opath, analysis.mFileSize, analysis.mSegments, analysis.mSegSize, analysis.mRemainderSegSize, analysis.mTotalSegments);
+            ui->textEdit->append("=================================================\nSegmentation complete.");
+            ui->m_button_reconstruct->setEnabled(true);
         }
     }
-    //organize.extensionSort(organize.dirFiles, this->selected_opath);
-
-    //std::cout << USER.machine_platform << '\n';
 }
 
-void GuiWindow::analyzeDir(bool checked)
+void GuiWindow::reconstructFile(bool checked)
 {
-    //std::cout << "clicked on analyzeDir" << '\n';
-    if (checked)
+    /*
+    if(checked)
     {
-        //Analysis USER(0);
-        Organsize organize(this->selected_file, this->selected_opath, 0);
+        Analysis analysis(this->selected_file, this->selected_size, this->selected_unit);
+        
+        if(!analysis.validSelection)
+        {   
+            ui->textEdit->setText("*********** ERROR ***********");
+            ui->textEdit->append(QString::fromStdString(analysis.errorString));
+        }
+        else
+        {
+            ui->textEdit->append("File selected: " + QString::fromStdString(this->selected_file)
+            + "\nSelected segment size: " + QString::number(this->selected_size) + " " + this->selected_unitStr
+            + "s.\nSelected file size: " + QString::number(analysis.mFileSize) + " bytes.");
+
+            //std::cout << analysis.machinePlatform << std::endl;
+            Organsize organize(this->selected_file, this->selected_opath, analysis.mFileSize, analysis.mSegments, analysis.mSegSize, analysis.mRemainderSegSize, analysis.mTotalSegments);
+            ui->textEdit->append("=================================================\nSegmentation complete.");
+            ui->m_button_reconstruct->setEnabled(true);
+        }
     }
-    //std::cout << USER.machine_platform << '\n';
+    */
 }
 
 void GuiWindow::comboBoxValue (int k) {

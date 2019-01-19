@@ -23,10 +23,11 @@ public:
     int selected_size;
 
 private slots:
-    void dirSelectorClicked( bool checked );
+    void dirSelector( bool checked );
     void fileSelector( bool checked );
-    void analyzeDir( bool checked );
+    void segmentSelector( bool checked );
     void organsizeFile( bool checked );
+    void reconstructFile( bool checked );
     void comboBoxValue ( int );
 
 private:

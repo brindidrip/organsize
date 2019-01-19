@@ -9,68 +9,79 @@ Analysis::Analysis(std::string fp, int segmentSize, int unit)
 
     identifyPlatform();
     // Validate user selection
-    fileAnalysis(fp.c_str(), segmentSize, unit);
+    fileAnalysis(fp.c_str());
+    segmentAnalysis(segmentSize, unit);
 }
 
 Analysis::~Analysis(){}
 
-void Analysis::fileAnalysis(const char* filePath, int segmentSize, int unitSize)
+void Analysis::fileAnalysis(const char* filePath)
 {
     std::streampos fsize = 0;
     std::ifstream f(filePath);
-    long long segSize = 0;
 
     if(!f.good())
     {
         this->validSelection = false;
         this->errorString = "File is invalid.";
+        this->mFileSize = 0;
     }
-
     else
     {
         std::ifstream file( filePath, std::ios::binary );
         fsize = file.tellg();
         file.seekg( 0, std::ios::end );
         fsize = file.tellg() - fsize;
-        this->fileSize = fsize;
+        this->mFileSize = fsize;
         file.close();
     }
+    
+    
+}
 
-    std::cout << unitSize << std::endl;
+void Analysis::segmentAnalysis(int segmentSize, int unitSize)
+{
+
     switch (unitSize)
     {
     case 0:
         // bytes
-        segSize = segmentSize;
+        this->mSegSize = segmentSize;
         break;
     case 1:
         // KB
-        segSize = segmentSize * 1000;
+        this->mSegSize = segmentSize * 1000;
         break;
     case 2:
         // MB
-        segSize = segmentSize * 10000;
+        this->mSegSize = segmentSize * 1000000;
         break;
     case 3:
         // GB
-        segSize = segmentSize * 100000;
+        this->mSegSize = segmentSize * 1000000000;
         break;
     case 4:
         // TB
-        segSize = segmentSize * 1000000;
+        this->mSegSize = segmentSize * 1000000000000;
     default:
-        segSize = 1;
+        this->mSegSize = 1024;
     }
 
-    std::cout << segSize << "vs" << fsize << std::endl;
+    // Initialize segment data members
+    this->mSegments = (this->mFileSize / this->mSegSize);
+    this->mRemainderSegSize = this->mFileSize % this->mSegSize;
+    this->mTotalSegments = this->mSegments;
 
+    if(this->mRemainderSegSize != 0)
+    {
+        this->mTotalSegments++;
+    }
 
-    if(segSize > fsize)
+    if(this->mSegSize > this->mFileSize)
     {   
-
         this->validSelection = false;
         this->errorString = "Segment size selected is larger than the selected file size. \nSelected segment size: "
-                            + std::to_string(segSize) + " bytes.\nSelected file size: " + std::to_string(this->fileSize) + " bytes.";
+                            + std::to_string(this->mSegSize) + " bytes.\nSelected file size: " + std::to_string(this->mFileSize) + " bytes.";
     }
 }
 

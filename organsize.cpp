@@ -13,64 +13,44 @@
 
 namespace fs = std::experimental::filesystem;
 
-Organsize::Organsize(std::string file, std::string dirPath, int tier)
+Organsize::Organsize(std::string file, std::string dirPath, long long fileSize, long long segments, long long segSize, long long remainderSS, long long totalSegs)
+    : mFilePath(file.c_str()), dirPath(dirPath.c_str()), mFileSize(fileSize), mSegments(segments), mSegSize(segSize), mRemainderSegSize(remainderSS), mTotalSegments(totalSegs)
 {
-    this->mFilePath = file.c_str();
-    this->dirPath = dirPath.c_str();
+    
+    std::cout << "File Path: " << file << "\nDirectory Path: " << dirPath << "\nFile Size: " << this->mFileSize << 
+    "\nmSegments: " << this->mSegments << "\nSegment Size: " << this->mSegSize << "\nRemainder Segment Size: " << this->mRemainderSegSize << "\nTotal Segments: " <<
+    mTotalSegments << std::endl;
+    
 
-    // Analyze & prep file for segmentation
-    if (!fileAnalysis(this->mFilePath)){
-        return;
-    }   
-
-    //segmentFile(this->mFilePath);
-    reconstructFile(this->dirPath);
+    segmentFile(this->mFilePath);
+    //reconstructFile(this->dirPath);
 
 }
 Organsize::~Organsize(){}
 
-bool Organsize::fileAnalysis(const char* filePath){
-    // Check if file is valid
-    std::ifstream f(filePath);
-    std::cout << "Is file valid: " << f.good() << '\n';
-
-    this->mfileSize = Organsize::fileSize(filePath);
-    this->segmentSize = 1500;
-    this->mSegments = (this->mfileSize / this->segmentSize);
-    this->lastSegmentSize = this->mfileSize % this->segmentSize;
-
-    std::cout << "Last segment size: " << this->lastSegmentSize << std::endl;
-    std::cout << "Total segments: " << this->mSegments + 1 << std::endl;
-
-    // Check filesize limitation
-    std::cout << "File size: " << Organsize::fileSize(filePath) << '\n';
-
-    return true;
-}
-
 void Organsize::segmentFile( const char* filePath){
     std::streampos fsize = 0;
     char * memblock;
-
     std::ifstream file ( filePath, std::ios::in|std::ios::binary|std::ios::ate);
 
+    // Read file into memblock
     if (file.is_open())
     {
         fsize = file.tellg();
+        std::cout << fsize << std::endl;
         memblock = new char [fsize];
         file.seekg(0, std::ios::beg);
         file.read(memblock, fsize);
         file.close();
     }
 
-    std::ofstream subnode[this->mSegments + 1];
+    std::ofstream subnode[this->mTotalSegments];
     std::stringstream sstm;
 
     long long sequence = 0;
     char sequenceHex[8];
     // Convert decimal to hex and output into a file
-    // 999 is tmp holder
-    long long totalSegments = 999999999999;
+    long long totalSegments = 999999999;
     char totalSegmentsHex[8];
     memcpy(totalSegmentsHex, &totalSegments, sizeof(totalSegmentsHex));
 
@@ -82,36 +62,31 @@ void Organsize::segmentFile( const char* filePath){
             }
 
     for( int i=0; i <= this->mSegments; i++){
-        
         memcpy(sequenceHex, &sequence, sizeof(sequenceHex));
 
         sstm.str("");
-        sstm << "subnode" << i;
+        sstm << this->dirPath << "/subnode" << i;
         
         subnode[i].open(sstm.str(), std::fstream::out | std::fstream::binary);
-
-        //std::cout << totalSegments << std::endl;
-
         if(i == this->mSegments){
             if(subnode[i]){
-                subnode[i].write(memblock + (i * this->segmentSize) ,this->lastSegmentSize);
+                subnode[i].write(memblock + (i * this->mSegSize) , this->mRemainderSegSize);
                 subnode[i].write(randomByteBuffer, 28);
                 subnode[i].write(sequenceHex, sizeof(sequenceHex));
                 subnode[i].write(totalSegmentsHex, sizeof(totalSegmentsHex));
                 sequence++;
+
             }
         }
-
         else if(subnode[i]){
-            subnode[i].write(memblock + (i * this->segmentSize) ,this->segmentSize);
+            subnode[i].write(memblock + (i * this->mSegSize) , this->mSegSize);
             subnode[i].write(randomByteBuffer, 28);
             subnode[i].write(sequenceHex, sizeof(sequenceHex));
             subnode[i].write(totalSegmentsHex, sizeof(totalSegmentsHex));
             sequence++;
         }
         // Close subnodes, as there is a max number of files that can be opened simultaneously 
-        subnode[i].close();
-        
+        subnode[i].close();        
     }
     delete memblock;
 }
@@ -253,17 +228,4 @@ void Organsize::reconstructFile( const char* directoryPath){
            //reconstructedFile.write((const char*)&segBytes[0], segBytes.size());
            //reconstructedFile.close();
         }
-
 }
-
-std::streampos Organsize::fileSize( const char* filePath ){
-    std::streampos fsize = 0;
-    std::ifstream file( filePath, std::ios::binary );
-
-    fsize = file.tellg();
-    file.seekg( 0, std::ios::end );
-    fsize = file.tellg() - fsize;
-    file.close();
-
-    return fsize;
-}   

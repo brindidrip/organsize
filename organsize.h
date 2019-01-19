@@ -7,21 +7,27 @@
 class Organsize
 {
     public:
-        std::vector<dirFile> dirFiles;
-        Organsize( std::string file, std::string dirPath, int );
+        // constructor:
+        Organsize( std::string file, std::string dirPath, long long fileSize, long long segments, long long selectedSegmentSize, long long remainderSS, long long totalSegs );
         ~Organsize();
-        void reconstructFile( const char* directoryPath );
+
+        // data members:
+        std::vector<dirFile> dirFiles;
         enum extensionType{ DOC };
-    private:
-        bool fileAnalysis( const char* filePath );
-        void segmentFile( const char* filePath );
-        std::streampos fileSize( const char* filePath );
-        const char* dirPath;
         const char* mFilePath;
-        int mfileSize;
-        int mSegments;
-        int lastSegmentSize;
-        int segmentSize;
+        const char* dirPath;
+        long long mFileSize;
+        long long mSegments;
+        long long mSegSize;
+        long long mRemainderSegSize;
+        long long mTotalSegments;
+
+        // member functions:
+        void reconstructFile( const char* directoryPath );
+        void segmentFile( const char* filePath );
+
+    private:
+    
 };
 
 #endif // ORGANSIZE_H
