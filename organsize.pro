@@ -9,5 +9,10 @@ CONFIG += c++11
 INCLUDEPATH += .
 
 # Input
-HEADERS += analysis.h dirFile.h gui.h organsize.h
-SOURCES += analysis.cpp dirFile.cpp gui.cpp main.cpp organsize.cpp
+HEADERS += analysis.h dirFile.h gui.h segment.h organsize.h \
+    guiwindow.h
+SOURCES += analysis.cpp dirFile.cpp gui.cpp main.cpp segment.cpp organsize.cpp \
+    guiwindow.cpp
+
+FORMS += \
+    guiwindow.ui

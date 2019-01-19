@@ -1,13 +1,13 @@
 #include <iostream>
 #include <QApplication>
-#include "gui.h"
+#include "guiwindow.h"
 #include "analysis.h"
 
 int main (int argc, char **argv)
 {
     QApplication app (argc, argv);
 
-    Gui window;
+    GuiWindow window;
     window.show();
 
     return app.exec();

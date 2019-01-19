@@ -15,7 +15,7 @@ CXX           = g++
 DEFINES       = -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
 CFLAGS        = -m64 -pipe -O2 -Wall -W -D_REENTRANT -fPIC $(DEFINES)
 CXXFLAGS      = -m64 -pipe -O2 -std=c++0x -Wall -W -D_REENTRANT -fPIC $(DEFINES)
-INCPATH       = -I. -I. -isystem /usr/include/x86_64-linux-gnu/qt5 -isystem /usr/include/x86_64-linux-gnu/qt5/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt5/QtGui -isystem /usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++-64
+INCPATH       = -I. -I. -isystem /usr/include/x86_64-linux-gnu/qt5 -isystem /usr/include/x86_64-linux-gnu/qt5/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt5/QtGui -isystem /usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I. -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++-64
 QMAKE         = /usr/lib/x86_64-linux-gnu/qt5/bin/qmake
 DEL_FILE      = rm -f
 CHK_DIR_EXISTS= test -d
@@ -50,15 +50,18 @@ OBJECTS_DIR   = ./
 
 SOURCES       = analysis.cpp \
 		dirFile.cpp \
-		gui.cpp \
 		main.cpp \
-		organsize.cpp moc_gui.cpp
+		segment.cpp \
+		organsize.cpp \
+		guiwindow.cpp moc_gui.cpp \
+		moc_guiwindow.cpp
 OBJECTS       = analysis.o \
 		dirFile.o \
-		gui.o \
 		main.o \
+		segment.o \
 		organsize.o \
-		moc_gui.o
+		guiwindow.o \
+		moc_guiwindow.o
 DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/common/unix.conf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/common/linux.conf \
@@ -122,12 +125,14 @@ DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/lex.prf \
 		organsize.pro analysis.h \
 		dirFile.h \
-		gui.h \
-		organsize.h analysis.cpp \
+		segment.h \
+		organsize.h \
+		guiwindow.h analysis.cpp \
 		dirFile.cpp \
-		gui.cpp \
 		main.cpp \
-		organsize.cpp
+		segment.cpp \
+		organsize.cpp \
+		guiwindow.cpp
 QMAKE_TARGET  = organsize
 DESTDIR       = #avoid trailing-slash linebreak
 TARGET        = organsize
@@ -155,7 +160,7 @@ first: all
 
 ####### Build rules
 
-$(TARGET):  $(OBJECTS)  
+$(TARGET): ui_guiwindow.h $(OBJECTS)  
 	$(LINK) $(LFLAGS) -o $(TARGET) $(OBJECTS) $(OBJCOMP) $(LIBS)
 
 Makefile: organsize.pro /usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++-64/qmake.conf /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
@@ -303,8 +308,9 @@ dist: distdir FORCE
 distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
-	$(COPY_FILE) --parents analysis.h dirFile.h gui.h organsize.h $(DISTDIR)/
-	$(COPY_FILE) --parents analysis.cpp dirFile.cpp gui.cpp main.cpp organsize.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents analysis.h dirFile.h segment.h organsize.h guiwindow.h $(DISTDIR)/
+	$(COPY_FILE) --parents analysis.cpp dirFile.cpp main.cpp segment.cpp organsize.cpp guiwindow.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents guiwindow.ui $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -327,23 +333,30 @@ check: first
 
 compiler_rcc_make_all:
 compiler_rcc_clean:
-compiler_moc_header_make_all: moc_gui.cpp
+compiler_moc_header_make_all: moc_guiwindow.cpp
 compiler_moc_header_clean:
-	-$(DEL_FILE) moc_gui.cpp
+	-$(DEL_FILE) moc_guiwindow.cpp
 moc_gui.cpp: gui.h
 	/usr/lib/x86_64-linux-gnu/qt5/bin/moc $(DEFINES) -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++-64 -I/home/dome/Documents/projects/organsize -I/home/dome/Documents/projects/organsize -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/5 -I/usr/include/x86_64-linux-gnu/c++/5 -I/usr/include/c++/5/backward -I/usr/lib/gcc/x86_64-linux-gnu/5/include -I/usr/local/include -I/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed -I/usr/include/x86_64-linux-gnu -I/usr/include gui.h -o moc_gui.cpp
 
+moc_guiwindow.cpp: guiwindow.h
+	/usr/lib/x86_64-linux-gnu/qt5/bin/moc $(DEFINES) -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++-64 -I/home/dome/Documents/projects/organsize -I/home/dome/Documents/projects/organsize -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/5 -I/usr/include/x86_64-linux-gnu/c++/5 -I/usr/include/c++/5/backward -I/usr/lib/gcc/x86_64-linux-gnu/5/include -I/usr/local/include -I/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed -I/usr/include/x86_64-linux-gnu -I/usr/include guiwindow.h -o moc_guiwindow.cpp
+
 compiler_moc_source_make_all:
 compiler_moc_source_clean:
-compiler_uic_make_all:
+compiler_uic_make_all: ui_guiwindow.h
 compiler_uic_clean:
+	-$(DEL_FILE) ui_guiwindow.h
+ui_guiwindow.h: guiwindow.ui
+	/usr/lib/x86_64-linux-gnu/qt5/bin/uic guiwindow.ui -o ui_guiwindow.h
+
 compiler_yacc_decl_make_all:
 compiler_yacc_decl_clean:
 compiler_yacc_impl_make_all:
 compiler_yacc_impl_clean:
 compiler_lex_make_all:
 compiler_lex_clean:
-compiler_clean: compiler_moc_header_clean 
+compiler_clean: compiler_moc_header_clean compiler_uic_clean 
 
 ####### Compile
 
@@ -353,21 +366,28 @@ analysis.o: analysis.cpp analysis.h
 dirFile.o: dirFile.cpp dirFile.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o dirFile.o dirFile.cpp
 
-gui.o: gui.cpp gui.h \
-		analysis.h \
-		organsize.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o gui.o gui.cpp
-
-main.o: main.cpp gui.h \
+main.o: main.cpp \
+		guiwindow.h \
 		analysis.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o main.cpp
 
+segment.o: segment.cpp segment.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o segment.o segment.cpp
+
 organsize.o: organsize.cpp organsize.h \
-		dirFile.h
+		dirFile.h \
+		segment.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o organsize.o organsize.cpp
+
+guiwindow.o: guiwindow.cpp guiwindow.h \
+		ui_guiwindow.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o guiwindow.o guiwindow.cpp
 
 moc_gui.o: moc_gui.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_gui.o moc_gui.cpp
+
+moc_guiwindow.o: moc_guiwindow.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_guiwindow.o moc_guiwindow.cpp
 
 ####### Install
 
