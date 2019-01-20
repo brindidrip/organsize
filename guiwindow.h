@@ -18,6 +18,7 @@ public:
     void textEditBoxInit();
     std::string selected_opath;
     std::string selected_file;
+    std::string selected_fileDir;
     QString selected_unitStr;
     int selected_unit;
     int selected_size;

@@ -15,11 +15,11 @@ class Analysis
         enum fileUnits { byte, KB, MB, GB, TB};
         platform machinePlatform;
         bool validSelection;
-        long long mFileSize;
-        long long mSegments;
-        long long mSegSize;
-        long long mTotalSegments;
-        long long mRemainderSegSize;
+        int mFileSize;
+        int mSegments;
+        int mSegSize;
+        int mTotalSegments;
+        int mRemainderSegSize;
         std::string errorString;
 
         // member functions:

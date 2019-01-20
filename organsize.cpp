@@ -13,44 +13,44 @@
 
 namespace fs = std::experimental::filesystem;
 
-Organsize::Organsize(std::string file, std::string dirPath, long long fileSize, long long segments, long long segSize, long long remainderSS, long long totalSegs)
-    : mFilePath(file.c_str()), dirPath(dirPath.c_str()), mFileSize(fileSize), mSegments(segments), mSegSize(segSize), mRemainderSegSize(remainderSS), mTotalSegments(totalSegs)
+Organsize::Organsize(std::string file, std::string fileDir, std::string dirPath, int fileSize, int segments, int segSize, int remainderSS, int totalSegs)
+    : mFilePath(file), mFileDir(fileDir), mdirPath(dirPath), mFileSize(fileSize), mSegments(segments), mSegSize(segSize), mRemainderSegSize(remainderSS), mTotalSegments(totalSegs)
 {
-    
-    std::cout << "File Path: " << file << "\nDirectory Path: " << dirPath << "\nFile Size: " << this->mFileSize << 
+    /*
+    std::cout << "File Path: " << this->mFilePath << "\nDirectory Path: " << this->mdirPath << "\nFile Size: " << this->mFileSize << 
     "\nmSegments: " << this->mSegments << "\nSegment Size: " << this->mSegSize << "\nRemainder Segment Size: " << this->mRemainderSegSize << "\nTotal Segments: " <<
     mTotalSegments << std::endl;
     
-
-    segmentFile(this->mFilePath);
-    //reconstructFile(this->dirPath);
-
+    segmentFile();
+    reconstructFile();
+    */
 }
+
 Organsize::~Organsize(){}
 
-void Organsize::segmentFile( const char* filePath){
+void Organsize::segmentFile(){
     std::streampos fsize = 0;
     char * memblock;
-    std::ifstream file ( filePath, std::ios::in|std::ios::binary|std::ios::ate);
 
-    // Read file into memblock
+    std::ifstream file ( this->mFilePath, std::ios::in|std::ios::binary|std::ios::ate);
+
     if (file.is_open())
     {
         fsize = file.tellg();
-        std::cout << fsize << std::endl;
         memblock = new char [fsize];
         file.seekg(0, std::ios::beg);
         file.read(memblock, fsize);
         file.close();
     }
 
+  
     std::ofstream subnode[this->mTotalSegments];
     std::stringstream sstm;
 
     long long sequence = 0;
     char sequenceHex[8];
     // Convert decimal to hex and output into a file
-    long long totalSegments = 999999999;
+    long long totalSegments = this->mTotalSegments;
     char totalSegmentsHex[8];
     memcpy(totalSegmentsHex, &totalSegments, sizeof(totalSegmentsHex));
 
@@ -62,12 +62,15 @@ void Organsize::segmentFile( const char* filePath){
             }
 
     for( int i=0; i <= this->mSegments; i++){
+        std::cout << "i: " << i << std::endl;
+
         memcpy(sequenceHex, &sequence, sizeof(sequenceHex));
 
         sstm.str("");
-        sstm << this->dirPath << "/subnode" << i;
-        
+        sstm << this->mdirPath << "/subnode" << i;
+
         subnode[i].open(sstm.str(), std::fstream::out | std::fstream::binary);
+
         if(i == this->mSegments){
             if(subnode[i]){
                 subnode[i].write(memblock + (i * this->mSegSize) , this->mRemainderSegSize);
@@ -79,6 +82,7 @@ void Organsize::segmentFile( const char* filePath){
             }
         }
         else if(subnode[i]){
+            std::cout << i * this->mSegSize << std::endl;
             subnode[i].write(memblock + (i * this->mSegSize) , this->mSegSize);
             subnode[i].write(randomByteBuffer, 28);
             subnode[i].write(sequenceHex, sizeof(sequenceHex));
@@ -86,23 +90,28 @@ void Organsize::segmentFile( const char* filePath){
             sequence++;
         }
         // Close subnodes, as there is a max number of files that can be opened simultaneously 
-        subnode[i].close();        
+        subnode[i].close();
+        std::cout << "i end: " << i << std::endl;
+
     }
-    delete memblock;
 }
 
-void Organsize::reconstructFile( const char* directoryPath){
+// bug: if cancels out file explorer for path selection, path will be none 
+void Organsize::reconstructFile( ){
     uint64_t totSegments = 0;
     uint64_t segSeqNum = 0;
     uint64_t lastSeqNum = 0;
 
     std::vector<Segment> segments;
   
-    // create a collection of segments and insert at front or back depending of seq num
-    std::ofstream reconstructedFile;
-    reconstructedFile.open("reconstruction", std::fstream::out | std::fstream::binary);
+    std::stringstream sstm;
+    sstm.str("");
+    sstm << this->mdirPath << "/reconstruction";
 
-    for (auto &p : fs::directory_iterator(directoryPath)){
+    std::ofstream reconstructedFile;
+    reconstructedFile.open(sstm.str(), std::fstream::out | std::fstream::binary);
+
+    for (auto &p : fs::directory_iterator(this->mFileDir)){
 
         std::ifstream fp ( p.path().string(), std::ios::binary);
         
