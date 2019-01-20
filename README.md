@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/brindidrip/organsize.svg?branch=master)](https://travis-ci.org/brindidrip/organsize)
 
+[[Quick Video Demo]](https://www.youtube.com/watch?v=81KrNXUSJIA)
 [![organ.png](https://i.postimg.cc/52spB2cP/organ.png)](https://postimg.cc/bZ2Q88wb)
 
 ## Introduction
