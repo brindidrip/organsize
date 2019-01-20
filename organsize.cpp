@@ -43,7 +43,6 @@ void Organsize::segmentFile(){
         file.close();
     }
 
-  
     std::ofstream subnode[this->mTotalSegments];
     std::stringstream sstm;
 
@@ -55,15 +54,13 @@ void Organsize::segmentFile(){
     memcpy(totalSegmentsHex, &totalSegments, sizeof(totalSegmentsHex));
 
     // Randomize buffer with special signature    
-    char randomByteBuffer[30];
-    for(size_t i = 0; i < 30; i++){
+    char randomByteBuffer[8];
+    for(size_t i = 0; i < 8; i++){
             //randomByteBuffer[i] = rand() % 256;
             randomByteBuffer[i] = 0x3D;
             }
 
     for( int i=0; i <= this->mSegments; i++){
-        std::cout << "i: " << i << std::endl;
-
         memcpy(sequenceHex, &sequence, sizeof(sequenceHex));
 
         sstm.str("");
@@ -74,32 +71,28 @@ void Organsize::segmentFile(){
         if(i == this->mSegments){
             if(subnode[i]){
                 subnode[i].write(memblock + (i * this->mSegSize) , this->mRemainderSegSize);
-                subnode[i].write(randomByteBuffer, 28);
+                subnode[i].write(randomByteBuffer, sizeof(randomByteBuffer));
                 subnode[i].write(sequenceHex, sizeof(sequenceHex));
                 subnode[i].write(totalSegmentsHex, sizeof(totalSegmentsHex));
                 sequence++;
-
             }
         }
         else if(subnode[i]){
-            std::cout << i * this->mSegSize << std::endl;
             subnode[i].write(memblock + (i * this->mSegSize) , this->mSegSize);
-            subnode[i].write(randomByteBuffer, 28);
+            subnode[i].write(randomByteBuffer, sizeof(randomByteBuffer));
             subnode[i].write(sequenceHex, sizeof(sequenceHex));
             subnode[i].write(totalSegmentsHex, sizeof(totalSegmentsHex));
             sequence++;
         }
         // Close subnodes, as there is a max number of files that can be opened simultaneously 
         subnode[i].close();
-        std::cout << "i end: " << i << std::endl;
-
     }
 }
 
-// bug: if cancels out file explorer for path selection, path will be none 
 void Organsize::reconstructFile( ){
     uint64_t totSegments = 0;
     uint64_t segSeqNum = 0;
+    uint64_t segSigNum = 0;
     uint64_t lastSeqNum = 0;
 
     std::vector<Segment> segments;
@@ -111,10 +104,13 @@ void Organsize::reconstructFile( ){
     std::ofstream reconstructedFile;
     reconstructedFile.open(sstm.str(), std::fstream::out | std::fstream::binary);
 
+    // initialize initial segment signature storage 
+    initInitialSegSig(this->mFilePath);
+
     for (auto &p : fs::directory_iterator(this->mFileDir)){
 
         std::ifstream fp ( p.path().string(), std::ios::binary);
-        
+
         if (fp.fail())
         {
             throw std::invalid_argument("file '" + p.path().string() + "' opening error.");
@@ -127,75 +123,65 @@ void Organsize::reconstructFile( ){
         // Vectors holding segment metadata in bytes in decimal form. Little endian
         std::vector <int> segTotalSegBytes;
         std::vector <int> segSeqBytes;
+        std::vector <int> segSigBytes;
         
-        for (uint i = segBytes.size() - 16; i<segBytes.size(); i++){
+        for (uint i = segBytes.size()-24; i<segBytes.size(); i++){
+            
             // Grab last 8 bytes of segmented file for total number of segments
-            if(i>=segBytes.size()-8)
+            if( i >= segBytes.size() - 8)
             {
                 segTotalSegBytes.push_back((int)segBytes[i]);
-                }
+            }
             // Grab 8 bytes prior to last 8 bytes for segment sequence number
-            else
+            else if ( i >= segBytes.size() - 16)
             {
                 segSeqBytes.push_back((int)segBytes[i]);
             }
+            else
+            {
+                segSigBytes.push_back((int)segBytes[i]);
+            }
         }
-        
+    
         // Convert container of bytes as a single decimal value
         const int base = 0x100;/* base 256 */ 
         // right to left, as it is little endian
-        for (int i = sizeof(segTotalSegBytes); i > 0;)
+        for (int i = segTotalSegBytes.size(); i > 0;)
         {
             totSegments *= base;
             totSegments += (int)segTotalSegBytes[--i];
         }
 
-        for (int i = sizeof(segSeqBytes); i > 0;)
+        for (int i = segSeqBytes.size(); i > 0;)
         {
             segSeqNum *= base;
             segSeqNum += (int)segSeqBytes[--i];
         }
 
+        for (int i = segSigBytes.size(); i > 0;)
+        {
+            segSigNum *= base;
+            segSigNum += (int)segSigBytes[--i];
+        }
+
+        /*
         std::cout << "Total segments: " << totSegments << std::endl;
         std::cout << "Current sequence number: " << segSeqNum << std::endl;
         std::cout << "Last sequence number: " << lastSeqNum << std::endl;
+        std::cout << "Seg signature number: " << segSigNum << std::endl;
+        */
 
+        if(!validateSegment(p.path().string(), this->mSegSize, segSigNum))
+        {   
+            //std::cout << "Segment is not valid: " <<p.path().string() << std::endl;
+            // File is not part of the segment collection
+            continue;
+        }
         // First approach:
         // Store all segments in container and then sort them all by sequence number. 
 
         Segment segment(segSeqNum, 0, totSegments, segBytes, segments.size());
         segments.push_back(segment);
-
-        /*
-        // if out of sequence
-        if(segSeqNum > (lastSeqNum + 1))
-        {
-            std::cout << "Out of sequence..." << std::endl;
-            
-            auto result = std::find_if(segments.begin(), segments.end(),
-                [=](Segment s)
-            {
-                if(s.sequenceNum == segSeqNum)
-                {   
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            });
-
-            // DNE in vector
-            if (result == segments.end())
-            {
-                std::cout << "Not found in segments vector." << std::endl;
-                std::cout << "Inserting " << segSeqNum << "at position: " << segments.size() << std::endl;
-                Segment segment(segSeqNum, 0, totSegments, segBytes, segments.size());
-                segments.push_back(segment);
-            }
-
-        }
-        */
 
         // Clean-up
         lastSeqNum = segSeqNum;
@@ -230,11 +216,70 @@ void Organsize::reconstructFile( ){
             
             for(const Segment& s: segments)
             {
-                reconstructedFile.write((const char*)&s.segmentData[0], s.segmentData.size() - 44);
+                reconstructedFile.write((const char*)&s.segmentData[0], s.segmentData.size() - 24);
             }
 
            //std::cout << "Writing " << segSeqNum << "into reconstructed file" << std::endl;
            //reconstructedFile.write((const char*)&segBytes[0], segBytes.size());
            //reconstructedFile.close();
         }
+}
+
+bool Organsize::validateSegment ( std::string fp, int segSize, uint64_t segSignature)
+{
+    // Compare against initial segment size and initial signature to validate
+    if(segSignature == this->initialSegSig)
+    {
+        return true;
+    }
+    return false;
+}
+
+void Organsize::initInitialSegSig ( std::string fp )
+{
+    uint64_t initSegSigNum = 0;
+
+    std::ifstream file ( fp, std::ios::binary);
+
+        if (file.fail())
+        {
+            throw std::invalid_argument("file '" + fp + "' opening error.");
+        }
+
+        // Load a segment into memory
+        std::vector<unsigned char> initsegBytes((std::istreambuf_iterator<char>(file)), (std::istreambuf_iterator<char>()));
+        file.close();
+
+        // Vectors holding segment metadata in bytes in decimal form. Little endian
+        std::vector <int> initsegSigBytes;
+        
+        for (uint i = initsegBytes.size()-24; i<initsegBytes.size(); i++){
+            
+            // Grab last 8 bytes of segmented file for total number of segments
+            if( i >= initsegBytes.size() - 8)
+            {
+                // Do nothing
+            }
+            // Grab 8 bytes prior to last 8 bytes for segment sequence number
+            else if ( i >= initsegBytes.size() - 16)
+            {
+                // Do nothing
+            }
+            else
+            {
+                // Grab signature
+                initsegSigBytes.push_back((int)initsegBytes[i]);
+            }
+        }
+    
+        // Convert container of bytes as a single decimal value
+        const int base = 0x100;/* base 256 */ 
+        // right to left, as it is little endian
+
+        for (int i = initsegSigBytes.size(); i > 0;)
+        {
+            initSegSigNum *= base;
+            initSegSigNum += (int)initsegSigBytes[--i];
+        }
+        this->initialSegSig = initSegSigNum;
 }

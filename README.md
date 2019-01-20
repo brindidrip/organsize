@@ -12,7 +12,7 @@ Each segment has the following footer:
     |   Segment signature   | Sequence | Total number |
     |                       |  Number  | of segments  |
     |-----------------------|----------|--------------|
-    |      30 Bytes         | 8 Bytes  |    8 Bytes   |
+    |       8 Bytes         | 8 Bytes  |    8 Bytes   |
      -------------------------------------------------- 
  
  Segment signature
@@ -30,6 +30,6 @@ Each segment has the following footer:
  
 TODO/BUGS
 =================================================================================
-- Number of segments and size of the segments are currently bounded by the maximum value of an integer. Need to fix long long data type bug.  
+- Number of segments and size of the segments are currently bounded by the maximum value of an integer. Need to fix long long data type bug. 
 
 - Cross platform functionality

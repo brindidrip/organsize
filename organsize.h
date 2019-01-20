@@ -22,10 +22,13 @@ class Organsize
         int mSegSize;
         int mRemainderSegSize;
         int mTotalSegments;
+        uint64_t initialSegSig;
 
         // member functions:
         void reconstructFile( );
         void segmentFile( );
+        bool validateSegment( std::string filePath, int ssSize, uint64_t ssSignature);
+        void initInitialSegSig( std::string filePath );
 
     private:
     
