@@ -4,7 +4,7 @@
 
 Idea
 =================================================================================
-This application provides the functionality of segmenting any specified file into any specified segment size. Segment size must be smaller than the initial file. Application also allows for the reconstruction of segments back into original file with no bit alterations.  
+This application provides the functionality of segmenting any specified file into any specified segment size. Segment size must be smaller than the initial file. The application also allows for the reconstruction of segments back into original file with no bit alterations.  
 
 Each segment has the following footer:
 
