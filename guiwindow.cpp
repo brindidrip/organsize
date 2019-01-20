@@ -40,7 +40,7 @@ GuiWindow::GuiWindow(QWidget *parent) :
     connect(ui->verticalSlider, SIGNAL(valueChanged(int)), this, SLOT(comboBoxValue(int)));
 
     ui->verticalSlider->setRange(1, 1024);
-    ui->verticalSlider->setSingleStep(0.1);
+    ui->verticalSlider->setSingleStep(1);
 
     // Set default unit size
     this->selected_unitStr = QString::fromStdString("byte");

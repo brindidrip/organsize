@@ -1,0 +1,9 @@
+language: cpp
+group: travis_latest
+dist: xenial
+
+matrix:
+  include:
+  - os: linux
+       
+script: make .
