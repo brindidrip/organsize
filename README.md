@@ -33,8 +33,9 @@ Each segment has the following footer:
 ## Install
 
 Install necessary Qt files
-- sudo apt-get install -y qt5-default qttools5-dev-tools
-- qmake "LIBS += -lstdc++fs"
+
+    sudo apt-get install -y qt5-default qttools5-dev-tools
+    qmake "LIBS += -lstdc++fs"
 
 ## Usage
 
@@ -52,7 +53,7 @@ Install necessary Qt files
 
 ## License
 
-organsize is licensed under the MIT license. Check the [LICENSE](LICENSE.md) file for details.
+organsize is licensed under the MIT license. Check the [LICENSE](LICENSE) file for details.
 
 ## Author
 
