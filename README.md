@@ -39,8 +39,8 @@ Install necessary Qt files
 
 ## Usage
 
-- make .
-- ./organsize 
+    make .
+    ./organsize 
 
 ## To-Do
 
