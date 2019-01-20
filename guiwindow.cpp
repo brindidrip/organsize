@@ -27,25 +27,27 @@ GuiWindow::GuiWindow(QWidget *parent) :
 
     ui->m_button_segment->setCheckable(true);
     ui->m_button_segment->setEnabled(true);
-    // Set default segment size
-    this->selected_size = 1500;
 
     ui->m_button_reconstruct->setCheckable(true);
     ui->m_button_reconstruct->setEnabled(false);
 
     connect(ui->m_button_file, SIGNAL (clicked(bool)), this, SLOT (fileSelector(bool)));
-    connect(ui->m_button_dir, SIGNAL (clicked(bool)), this, SLOT (dirSelector(bool)));
     connect(ui->m_button_segment, SIGNAL (clicked(bool)), this, SLOT (segmentSelector(bool)));
+    connect(ui->m_button_dir, SIGNAL (clicked(bool)), this, SLOT (dirSelector(bool)));
     connect(ui->m_button_organsize, SIGNAL (clicked(bool)), this, SLOT (organsizeFile(bool)));
     connect(ui->m_button_reconstruct, SIGNAL (clicked(bool)), this, SLOT (reconstructFile(bool)));
-
+    connect(ui->segmentUnitComboBox, SIGNAL (activated(int)), this, SLOT (changeSSLabel(int)));
+    connect(ui->verticalSlider, SIGNAL(valueChanged(int)), this, SLOT(comboBoxValue(int)));
 
     ui->verticalSlider->setRange(1, 1024);
-    ui->verticalSlider->setSingleStep(100);
+    ui->verticalSlider->setSingleStep(0.1);
+
     // Set default unit size
     this->selected_unitStr = QString::fromStdString("byte");
 
-    connect(ui->verticalSlider, SIGNAL(valueChanged(int)), this, SLOT(comboBoxValue(int)));
+    // Set default segment size
+    this->selected_size = 1500;
+
     // TODO 
     // change mfilesize to long long in organize
     // change bytes size reconstruct  
@@ -77,7 +79,7 @@ void GuiWindow::textEditBoxInit()
     ui->textEdit->append("  ==============================================================================");
 
     ui->textEdit->append("\n\nMIT License\n");
-    ui->textEdit->append("Copyright (c) 2019 Domenico Martinelli\n\n\\Permission is hereby granted, free of charge, to any person obtaining a copy"
+    ui->textEdit->append("Copyright (c) 2019 Domenico Martinelli\n\nPermission is hereby granted, free of charge, to any person obtaining a copy "
                          "of this software and associated documentation files (the \"Software\"), to deal "
                          "in the Software without restriction, including without limitation the rights "
                          "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell "
@@ -101,6 +103,7 @@ void GuiWindow::dirSelector(bool checked)
         //validate path?
         this->selected_opath = path.toStdString();
         ui->textEdit->append("New output path: " + QString::fromStdString(this->selected_opath));
+        ui->m_button_dir->setChecked(false);
         }
 }
 
@@ -115,17 +118,22 @@ void GuiWindow::fileSelector(bool checked)
         ui->textEdit->append("File: '" + file + "'");
         ui->textEdit->append("Current output path: " + QString::fromStdString(this->selected_opath));
 
-        ui->m_button_organsize->setEnabled(true);
+        ui->textEdit->append("Current segment size: " + QString::number(this->selected_size) + " " + this->selected_unitStr);
+
+        ui->m_button_file->setChecked(false);
+        ui->m_button_segment->setEnabled(true);
+
         ui->m_button_dir->setEnabled(true);
+
+        ui->m_button_organsize->setEnabled(true);
         ui->m_button_reconstruct->setEnabled(false);
-        ui->m_button_segment->setEnabled(false);
     }
 }
 
 void GuiWindow::segmentSelector(bool checked)
 {
     if (checked) {
-        ui->textEdit->setText("Selecting initial segment to reconstruct...\n");
+        ui->textEdit->setText("Select a segment to reconstruct...\n");
 
         QString file = QFileDialog::getOpenFileName(this, tr("Choose initial segment to reconstruct original file."), tr("."));
         this->selected_file = file.toStdString();
@@ -139,9 +147,13 @@ void GuiWindow::segmentSelector(bool checked)
         ui->textEdit->append("Please ensure that all segments are within the specified directory.");
         ui->textEdit->setTextColor(Qt::black);
 
-        ui->m_button_organsize->setEnabled(false);
+        ui->m_button_file->setEnabled(true);
+        ui->m_button_segment->setEnabled(true);
+        ui->m_button_segment->setChecked(false);
+
         ui->m_button_dir->setEnabled(true);
-        ui->m_button_file->setEnabled(false);
+        
+        ui->m_button_organsize->setEnabled(false);
         ui->m_button_reconstruct->setEnabled(true);
     }
 }
@@ -169,9 +181,16 @@ void GuiWindow::organsizeFile(bool checked)
             
             ui->textEdit->append("=================================================\n\nA total of " + QString::number(analysis.mTotalSegments)
             + " segments were created in directory: " + QString::fromStdString(this->selected_opath) + "\nSegmentation complete.");
-
-            ui->m_button_reconstruct->setEnabled(true);
         }
+        
+        ui->m_button_segment->setEnabled(true);
+        ui->m_button_segment->setChecked(false);
+
+        ui->m_button_dir->setEnabled(false);
+            
+        ui->m_button_organsize->setChecked(false);
+        ui->m_button_organsize->setEnabled(false);
+        ui->m_button_reconstruct->setEnabled(false);        
     }
 }
 
@@ -181,7 +200,7 @@ void GuiWindow::reconstructFile(bool checked)
     {
         Analysis analysis(this->selected_file, this->selected_size, this->selected_unit);
 
-        
+       analysis.validSelection = true; 
         if(!analysis.validSelection)
         {   
             ui->textEdit->setText("*********** ERROR ***********");
@@ -197,14 +216,55 @@ void GuiWindow::reconstructFile(bool checked)
             organize.reconstructFile();
 
             ui->textEdit->append("=================================================\nReconstruction complete.");
-            ui->m_button_reconstruct->setEnabled(true);
         }
+        
+        ui->m_button_file->setEnabled(true);
+
+        ui->m_button_dir->setEnabled(false);
+
+        ui->m_button_organsize->setEnabled(false);
+        ui->m_button_reconstruct->setEnabled(false);
+        ui->m_button_reconstruct->setChecked(false);
     }
 }
 
-void GuiWindow::comboBoxValue (int k) {
+void GuiWindow::comboBoxValue (int k)
+{
     ui->segmentSizeLabel->setText(QString::number(k) + "  " + ui->segmentUnitComboBox->currentText());
     this->selected_size = k;
     this->selected_unit = ui->segmentUnitComboBox->currentIndex();
     this->selected_unitStr = ui->segmentUnitComboBox->currentText();
+}
+
+void GuiWindow::changeSSLabel (int unit)
+{
+    QString unitString;
+
+    switch (unit)
+    {
+    case 0:
+        // bytes
+        unitString = "byte";
+        break;
+    case 1:
+        // KB
+        unitString = "KB";
+        break;
+    case 2:
+        // MB
+        unitString = "MB";
+        break;
+    case 3:
+        // GB
+        unitString = "GB";
+        break;
+    case 4:
+        // TB
+        unitString = "TB";
+        break;
+    default:
+        unitString = "byte";
+    }
+    ui->segmentSizeLabel->setText(QString::number(this->selected_unit) + "  " + unitString);
+    ui->verticalSlider->setValue(1);
 }

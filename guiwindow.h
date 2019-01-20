@@ -30,6 +30,7 @@ private slots:
     void organsizeFile( bool checked );
     void reconstructFile( bool checked );
     void comboBoxValue ( int );
+    void changeSSLabel ( int );
 
 private:
     Ui::GuiWindow *ui;
